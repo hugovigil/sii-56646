@@ -1,44 +1,34 @@
-# Sistemas Informáticos Industriales
+# Sistemas Informáticos Industriales - Práctica 1
 
-![UPM](https://img.shields.io/badge/UPM-ETSIDI-red)
-![Curso](https://img.shields.io/badge/Curso-2026--2027-blue)
-![Lenguaje](https://img.shields.io/badge/C-Programming-00599C?logo=c)
-![Linux](https://img.shields.io/badge/Linux-Ubuntu-E95420?logo=ubuntu)
-![Git](https://img.shields.io/badge/Git-Version%20Control-F05032?logo=git)
+Mi repo de **Sistemas Informáticos Industriales** 
 
-Material docente de la asignatura **Sistemas Informáticos Industriales** de la **Escuela Técnica Superior de Ingeniería y Diseño Industrial (ETSIDI)** de la **Universidad Politécnica de Madrid (UPM)**.
+- **Autor:** Hugo Vigil Velasco
+- **Matrícula:** 56646
 
----
+## Descripción
 
-## 📖 Descripción
+Es la practica 1 de la asignatura
 
-Este repositorio contiene el material utilizado en las prácticas de la asignatura **Sistemas Informáticos Industriales**, incluyendo los guiones y el código de inicio.
+Juego de tenis en C++ para dos jugadores en el mismo teclado, hecho con OpenGL y GLUT.
+En esta práctica se prepara el entorno de desarrollo en Linux (Git, CMake y Make) y se
+da movimiento a las raquetas y a la esfera.
 
-El objetivo de la asignatura es introducir en el desarrollo de aplicaciones para sistemas informáticos industriales, haciendo especial énfasis en el uso del lenguaje C y del sistema operativo Linux.
+## Controles
 
----
+- Raqueta izquierda: `w` (arriba) y `s` (abajo)
+- Raqueta derecha: `o` (arriba) y `l` (abajo)
 
-## 📚 Wiki
+## Dependencias
 
-La documentación detallada de cada una de las prácticas se encuentra en la Wiki del repositorio.
+Las siguientes dependencias    
 
-➡️ **Acceso a la Wiki:**  
-https://github.com/raquelcedazo/sistemas-informaticos-industriales/wiki
+sudo apt install g++ git freeglut3-dev cmake mesa-common-dev libglu1-mesa-dev
 
----
+## Compilación y ejecución
 
-## 🎓 Profesorado
-
-Asignatura impartida por el **Departamento de Ingeniería Eléctrica, Electrónica, Automática y Física Aplicada** de la **Universidad Politécnica de Madrid**:
-
-- **Raquel Cedazo** *(coordinadora de las prácticas)*
-- **David Álvarez**
-- **Imanol Izcara**
-
----
-
-## 🤝 Contribuciones
-
-Este repositorio tiene finalidad exclusivamente docente.
-
-Si detectas algún error o tienes alguna sugerencia de mejora, puedes comunicarlo al profesorado de la asignatura.
+    cd workspace
+    mkdir build
+    cd build
+    cmake ..
+    make
+    ./tenis
