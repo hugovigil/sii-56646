@@ -2,6 +2,10 @@
 //
 //////////////////////////////////////////////////////////////////////
 #include <fstream>
+
+#include <fcntl.h>
+#include <unistd.h>
+
 #include "Mundo.h"
 #include "glut.h"
 
@@ -21,11 +25,12 @@ CMundo::CMundo()
 
 CMundo::~CMundo()
 {
-
+    close(tuberia);
 }
 
 void CMundo::InitGL()
 {
+
 	//Habilitamos las luces, la renderizacion y el color de los materiales
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHTING);
@@ -128,6 +133,9 @@ void CMundo::OnTimer(int value)
 
 	jugador1.Rebota(esfera);
 	jugador2.Rebota(esfera);
+	
+	char cad[100];
+	
 	if(fondo_izq.Rebota(esfera))
 	{
 		esfera.centro.x=0;
@@ -135,6 +143,9 @@ void CMundo::OnTimer(int value)
 		esfera.velocidad.x=2+2*rand()/(float)RAND_MAX;
 		esfera.velocidad.y=2+2*rand()/(float)RAND_MAX;
 		puntos2++;
+
+		sprintf(cad,"Jugador 2 marca 1 punto, lleva un total de %d puntos.",puntos2);
+		write(tuberia,cad,strlen(cad)+1);
 	}
 
 	if(fondo_dcho.Rebota(esfera))
@@ -144,7 +155,15 @@ void CMundo::OnTimer(int value)
 		esfera.velocidad.x=-2-2*rand()/(float)RAND_MAX;
 		esfera.velocidad.y=-2-2*rand()/(float)RAND_MAX;
 		puntos1++;
+		
+		sprintf(cad,"Jugador 1 marca 1 punto, lleva un total de %d puntos.",puntos1);
+		write(tuberia,cad,strlen(cad)+1);
 	}
+	
+	//OPCIONAL, LO DE QUE TERMINE A LOS 3 pts
+
+	if(puntos1>=3 || puntos2>=3)
+		exit(0);
 
 }
 
@@ -164,6 +183,18 @@ void CMundo::OnKeyboardDown(unsigned char key, int x, int y)
 
 void CMundo::Init()
 {
+        
+        puntos1=0;
+	puntos2=0;
+
+	tuberia=open("FIFO",O_WRONLY);
+	if(tuberia<0)
+	{
+		perror("No puede abrirse el FIFO. Arranca primero el logger");
+		exit(1);
+	}
+	
+	
 	Plano p;
 //pared inferior
 	p.x1=-7;p.y1=-5;
