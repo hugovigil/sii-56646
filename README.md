@@ -1,4 +1,4 @@
-# Sistemas Informáticos Industriales - Práctica 1
+# Sistemas Informáticos Industriales
 
 Mi repo de **Sistemas Informáticos Industriales** 
 
@@ -32,3 +32,15 @@ sudo apt install g++ git freeglut3-dev cmake mesa-common-dev libglu1-mesa-dev
     cmake ..
     make
     ./tenis
+
+
+## Práctica 2: comunicación mediante FIFO
+
+Se añade el programa logger, que crea una tubería con nombre (FIFO) y recibe del juego
+un mensaje cada vez que un jugador marca un punto. 
+
+El juego y el logger terminan cuando algún jugador alcanza 3 puntos.
+
+Para ejecutarlo, abrir dos terminales en la carpeta workspace/build. 
+
+En la primera se lanza ./logger y en la segunda ./tenis (el logger siempre primero).
