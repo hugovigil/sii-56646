@@ -6,6 +6,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+//p3
+#include <sys/mman.h>
+
+
 #include "Mundo.h"
 #include "glut.h"
 
@@ -26,6 +30,8 @@ CMundo::CMundo()
 CMundo::~CMundo()
 {
     close(tuberia);
+//p3 - modificamos destructor
+    munmap(pdatos,sizeof(DatosMemCompartida));
 }
 
 void CMundo::InitGL()
@@ -120,7 +126,19 @@ void CMundo::OnDraw()
 
 void CMundo::OnTimer(int value)
 {	
-	jugador1.Mueve(0.025f);
+
+//p3
+	pdatos->esfera=esfera;
+	pdatos->raqueta1=jugador1;
+	if(pdatos->accion==1)
+		OnKeyboardDown('w',0,0);
+	else if(pdatos->accion==-1)
+		OnKeyboardDown('s',0,0);
+	else
+		jugador1.velocidad.y=0;	
+//p3
+
+jugador1.Mueve(0.025f);
 	jugador2.Mueve(0.025f);
 	esfera.Mueve(0.025f);
 	int i;
@@ -194,7 +212,27 @@ void CMundo::Init()
 		exit(1);
 	}
 	
+//p3
+
+	int fd=open("datos.txt",O_RDWR|O_CREAT|O_TRUNC,0600);
+	if(fd<0)
+	{
+		perror("No puede crearse el fichero de datos");
+		exit(1);
+	}
+	ftruncate(fd,sizeof(DatosMemCompartida));
+	pdatos=(DatosMemCompartida*)mmap(NULL,sizeof(DatosMemCompartida),PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	close(fd);
+	if(pdatos==MAP_FAILED)
+	{
+		perror("No puede proyectarse el fichero");
+		exit(1);
+	}
+	pdatos->accion=0;
 	
+//p3
+
+
 	Plano p;
 //pared inferior
 	p.x1=-7;p.y1=-5;
