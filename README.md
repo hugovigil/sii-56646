@@ -44,3 +44,13 @@ El juego y el logger terminan cuando algún jugador alcanza 3 puntos.
 Para ejecutarlo, abrir dos terminales en la carpeta workspace/build. 
 
 En la primera se lanza ./logger y en la segunda ./tenis (el logger siempre primero).
+
+## Práctica 3: comunicación mediante archivo proyectado en memoria
+
+Se añade el programa bot, que controla de forma automática la raqueta izquierda (jugador 1).
+El tenis crea el fichero datos.txt y lo proyecta en memoria (mmap). El bot proyecta el mismo
+fichero y, leyendo la posición de la esfera y de la raqueta, decide si ésta sube, baja o se queda quieta.
+
+Para ejecutarlo, abrir tres terminales en workspace/build y lanzar por este orden:
+./logger, ./tenis y ./bot
+La raqueta derecha se sigue controlando con las teclas o y l.
