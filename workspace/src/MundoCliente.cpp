@@ -3,6 +3,10 @@
 //////////////////////////////////////////////////////////////////////
 #include <fstream>
 
+//p4
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -10,7 +14,7 @@
 #include <sys/mman.h>
 
 
-#include "Mundo.h"
+#include "MundoCliente.h"
 #include "glut.h"
 
 #include <stdlib.h>
@@ -29,7 +33,11 @@ CMundo::CMundo()
 
 CMundo::~CMundo()
 {
-    close(tuberia);
+//p4      
+close(tuberia_coordenadas);
+close(tuberia_teclas);
+unlink("FIFO_TECLAS");
+
 //p3 - modificamos destructor
     munmap(pdatos,sizeof(DatosMemCompartida));
 }
@@ -127,6 +135,15 @@ void CMundo::OnDraw()
 void CMundo::OnTimer(int value)
 {	
 
+//p4 - lee tuberia que mando el server, guarda en cad, devuelve en n lo que leyo. y el scanf reparte los 12 numeros en espera raqueta y marcadores y tal
+	char cad[200];
+	int n=read(tuberia_coordenadas,cad,sizeof(cad));
+	if(n<=0)
+		exit(0);
+	sscanf(cad,"%f %f %f %f %f %f %f %f %f %f %d %d", &esfera.centro.x,&esfera.centro.y, &jugador1.x1,&jugador1.y1,&jugador1.x2,&jugador1.y2, &jugador2.x1,&jugador2.y1,&jugador2.x2,&jugador2.y2, &puntos1, &puntos2);
+//p4
+
+
 //p3
 	pdatos->esfera=esfera;
 	pdatos->raqueta1=jugador1;
@@ -134,9 +151,9 @@ void CMundo::OnTimer(int value)
 		OnKeyboardDown('w',0,0);
 	else if(pdatos->accion==-1)
 		OnKeyboardDown('s',0,0);
-	else
-		jugador1.velocidad.y=0;	
-//p3
+	/*else
+		jugador1.velocidad.y=0;*/
+/*//p3
 
 jugador1.Mueve(0.025f);
 	jugador2.Mueve(0.025f);
@@ -184,10 +201,12 @@ jugador1.Mueve(0.025f);
 		exit(0);
 
 }
+*/
+}
 
 void CMundo::OnKeyboardDown(unsigned char key, int x, int y)
 {
-	switch(key)
+	/*switch(key)
 	{
 //	case 'a':jugador1.velocidad.x=-1;break;
 //	case 'd':jugador1.velocidad.x=1;break;
@@ -196,7 +215,13 @@ void CMundo::OnKeyboardDown(unsigned char key, int x, int y)
 	case 'l':jugador2.velocidad.y=-4;break;
 	case 'o':jugador2.velocidad.y=4;break;
 
-	}
+	}*/
+	
+	//p4
+	char cad[100];
+	sprintf(cad,"%c",key);
+	write(tuberia_teclas,cad,strlen(cad)+1);
+	
 }
 
 void CMundo::Init()
@@ -205,12 +230,39 @@ void CMundo::Init()
         puntos1=0;
 	puntos2=0;
 
-	tuberia=open("FIFO",O_WRONLY);
+//p4
+	// tuberia cliente -> servidor (teclas): la crea el cliente
+	unlink("FIFO_TECLAS");
+	if(mkfifo("FIFO_TECLAS",0600)<0)
+	{
+		perror("No puede crearse el FIFO de teclas");
+		exit(1);
+	}
+
+	// tuberia servidor -> cliente (coordenadas): la crea el servidor
+	tuberia_coordenadas=open("FIFO_COORDENADAS",O_RDONLY);
+	if(tuberia_coordenadas<0)
+	{
+		perror("No puede abrirse el FIFO de coordenadas. Arranca primero el servidor");
+		exit(1);
+	}
+
+	tuberia_teclas=open("FIFO_TECLAS",O_WRONLY);
+	if(tuberia_teclas<0)
+	{
+		perror("No puede abrirse el FIFO de teclas");
+		exit(1);
+	}
+
+//p4
+
+
+	/*tuberia=open("FIFO",O_WRONLY);
 	if(tuberia<0)
 	{
 		perror("No puede abrirse el FIFO. Arranca primero el logger");
 		exit(1);
-	}
+	}*/
 	
 //p3
 

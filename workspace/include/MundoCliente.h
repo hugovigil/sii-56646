@@ -39,7 +39,11 @@ public:
 	int puntos2;
 
 
-        int tuberia;
+        //int tuberia;
+//p4
+	int tuberia_coordenadas;
+	int tuberia_teclas;
+
 
 //p3
 	DatosMemCompartida *pdatos;

@@ -1,0 +1,340 @@
+// Mundo.cpp: implementation of the CMundo class.
+//
+//////////////////////////////////////////////////////////////////////
+#include <fstream>
+
+//p4
+#include <sys/types.h>
+#include <sys/stat.h>
+
+
+#include <fcntl.h>
+#include <unistd.h>
+
+//p3
+//#include <sys/mman.h>
+
+
+//#include "Mundo.h"
+//p4
+#include "MundoServidor.h"
+
+
+#include "glut.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+
+//////////////////////////////////////////////////////////////////////
+// Construction/Destruction
+//////////////////////////////////////////////////////////////////////
+
+
+//p4
+void* hilo_comandos(void* d)
+{
+	CMundo* p=(CMundo*) d;
+	p->RecibeComandosJugador();
+	return NULL;
+}
+
+void CMundo::RecibeComandosJugador()
+{
+	while (1) {
+		usleep(10);
+		char cad[100];
+		read(tuberia_teclas, cad, sizeof(cad));
+		unsigned char key;
+		sscanf(cad,"%c",&key);
+		if(key=='s')jugador1.velocidad.y=-4;
+		if(key=='w')jugador1.velocidad.y=4;
+		if(key=='l')jugador2.velocidad.y=-4;
+		if(key=='o')jugador2.velocidad.y=4;
+	}
+}
+
+
+
+CMundo::CMundo()
+{
+	Init();
+}
+
+CMundo::~CMundo()
+{
+    close(tuberia);
+//p3 - modificamos destructor
+    //munmap(pdatos,sizeof(DatosMemCompartida));
+
+//p4
+	close(tuberia_coordenadas);
+	unlink("FIFO_COORDENADAS");
+	close(tuberia_teclas);
+}
+
+void CMundo::InitGL()
+{
+
+	//Habilitamos las luces, la renderizacion y el color de los materiales
+	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_COLOR_MATERIAL);
+	
+	glMatrixMode(GL_PROJECTION);
+	gluPerspective( 40.0, 800/600.0f, 0.1, 150);
+}
+
+void print(char *mensaje, int x, int y, float r, float g, float b)
+{
+	glDisable (GL_LIGHTING);
+
+	glMatrixMode(GL_TEXTURE);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT) );
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glColor3f(r,g,b);
+	glRasterPos3f(x, glutGet(GLUT_WINDOW_HEIGHT)-18-y, 0);
+	int len = strlen (mensaje );
+	for (int i = 0; i < len; i++) 
+		glutBitmapCharacter (GLUT_BITMAP_HELVETICA_18, mensaje[i] );
+		
+	glMatrixMode(GL_TEXTURE);
+	glPopMatrix();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	glEnable( GL_DEPTH_TEST );
+}
+void CMundo::OnDraw()
+{
+	//Borrado de la pantalla	
+   	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//Para definir el punto de vista
+	glMatrixMode(GL_MODELVIEW);	
+	glLoadIdentity();
+	
+	gluLookAt(0.0, 0, 17,  // posicion del ojo
+		0.0, 0.0, 0.0,      // hacia que punto mira  (0,0,0) 
+		0.0, 1.0, 0.0);      // definimos hacia arriba (eje Y)    
+
+	/////////////////
+	///////////
+	//		AQUI EMPIEZA MI DIBUJO
+	char cad[100];
+	sprintf(cad,"Jugador1: %d",puntos1);
+	print(cad,10,0,1,1,1);
+	sprintf(cad,"Jugador2: %d",puntos2);
+	print(cad,650,0,1,1,1);
+	int i;
+	for(i=0;i<paredes.size();i++)
+		paredes[i].Dibuja();
+
+	fondo_izq.Dibuja();
+	fondo_dcho.Dibuja();
+	jugador1.Dibuja();
+	jugador2.Dibuja();
+	esfera.Dibuja();
+
+	/////////////////
+	///////////
+	//		AQUI TERMINA MI DIBUJO
+	////////////////////////////
+
+	//Al final, cambiar el buffer
+	glutSwapBuffers();
+}
+
+void CMundo::OnTimer(int value)
+{	
+
+//p3
+	/*pdatos->esfera=esfera;
+	pdatos->raqueta1=jugador1;
+	if(pdatos->accion==1)
+		OnKeyboardDown('w',0,0);
+	else if(pdatos->accion==-1)
+		OnKeyboardDown('s',0,0);
+	else
+		jugador1.velocidad.y=0;	*/
+//p3
+
+jugador1.Mueve(0.025f);
+	jugador2.Mueve(0.025f);
+	esfera.Mueve(0.025f);
+	int i;
+	for(i=0;i<paredes.size();i++)
+	{
+		paredes[i].Rebota(esfera);
+		paredes[i].Rebota(jugador1);
+		paredes[i].Rebota(jugador2);
+	}
+
+	jugador1.Rebota(esfera);
+	jugador2.Rebota(esfera);
+	
+	char cad[200];
+	
+	if(fondo_izq.Rebota(esfera))
+	{
+		esfera.centro.x=0;
+		esfera.centro.y=rand()/(float)RAND_MAX;
+		esfera.velocidad.x=2+2*rand()/(float)RAND_MAX;
+		esfera.velocidad.y=2+2*rand()/(float)RAND_MAX;
+		puntos2++;
+
+		sprintf(cad,"Jugador 2 marca 1 punto, lleva un total de %d puntos.",puntos2);
+		write(tuberia,cad,strlen(cad)+1);
+	}
+
+	if(fondo_dcho.Rebota(esfera))
+	{
+		esfera.centro.x=0;
+		esfera.centro.y=rand()/(float)RAND_MAX;
+		esfera.velocidad.x=-2-2*rand()/(float)RAND_MAX;
+		esfera.velocidad.y=-2-2*rand()/(float)RAND_MAX;
+		puntos1++;
+		
+		sprintf(cad,"Jugador 1 marca 1 punto, lleva un total de %d puntos.",puntos1);
+		write(tuberia,cad,strlen(cad)+1);
+	}
+	
+	//p4
+	sprintf(cad,"%f %f %f %f %f %f %f %f %f %f %d %d", esfera.centro.x,esfera.centro.y,      jugador1.x1,jugador1.y1,jugador1.x2,jugador1.y2,jugador2.x1,jugador2.y1,jugador2.x2,jugador2.y2, puntos1, puntos2);
+	write(tuberia_coordenadas,cad,sizeof(cad)); 
+	
+	
+	//OPCIONAL, LO DE QUE TERMINE A LOS 3 pts
+
+	if(puntos1>=3 || puntos2>=3)
+		exit(0);
+
+}
+
+void CMundo::OnKeyboardDown(unsigned char key, int x, int y)
+{
+	switch(key)
+	{
+//	case 'a':jugador1.velocidad.x=-1;break;
+//	case 'd':jugador1.velocidad.x=1;break;
+	case 's':jugador1.velocidad.y=-4;break;
+	case 'w':jugador1.velocidad.y=4;break;
+	case 'l':jugador2.velocidad.y=-4;break;
+	case 'o':jugador2.velocidad.y=4;break;
+
+	}
+}
+
+void CMundo::Init()
+{
+        
+        puntos1=0;
+	puntos2=0;
+
+	tuberia=open("FIFO",O_WRONLY);
+	if(tuberia<0)
+	{
+		perror("No puede abrirse el FIFO. Arranca primero el logger");
+		exit(1);
+	}
+	
+//p4
+		// tuberia servidor -> cliente (coordenadas): la crea el servidor
+	unlink("FIFO_COORDENADAS");
+	if(mkfifo("FIFO_COORDENADAS",0600)<0)
+	{
+		perror("No puede crearse el FIFO de coordenadas");
+		exit(1);
+	}
+	tuberia_coordenadas=open("FIFO_COORDENADAS",O_WRONLY);
+	if(tuberia_coordenadas<0)
+	{
+		perror("No puede abrirse el FIFO de coordenadas");
+		exit(1);
+	}
+
+	// tuberia cliente -> servidor (teclas): la crea el cliente
+	tuberia_teclas=open("FIFO_TECLAS",O_RDONLY);
+	if(tuberia_teclas<0)
+	{
+		perror("No puede abrirse el FIFO de teclas");
+		exit(1);
+	}
+//p4
+	
+	
+//p3
+
+	/*int fd=open("datos.txt",O_RDWR|O_CREAT|O_TRUNC,0600);
+	if(fd<0)
+	{
+		perror("No puede crearse el fichero de datos");
+		exit(1);
+	}
+	ftruncate(fd,sizeof(DatosMemCompartida));
+	pdatos=(DatosMemCompartida*)mmap(NULL,sizeof(DatosMemCompartida),PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	close(fd);
+	if(pdatos==MAP_FAILED)
+	{
+		perror("No puede proyectarse el fichero");
+		exit(1);
+	}
+	pdatos->accion=0;
+	*/
+//p3
+
+
+	Plano p;
+//pared inferior
+	p.x1=-7;p.y1=-5;
+	p.x2=7;p.y2=-5;
+	paredes.push_back(p);
+
+//superior
+	p.x1=-7;p.y1=5;
+	p.x2=7;p.y2=5;
+	paredes.push_back(p);
+
+	fondo_izq.r=0;
+	fondo_izq.x1=-7;fondo_izq.y1=-5;
+	fondo_izq.x2=-7;fondo_izq.y2=5;
+
+	fondo_dcho.r=0;
+	fondo_dcho.x1=7;fondo_dcho.y1=-5;
+	fondo_dcho.x2=7;fondo_dcho.y2=5;
+
+	//a la izq
+	jugador1.g=0;
+	jugador1.x1=-6;jugador1.y1=-1;
+	jugador1.x2=-6;jugador1.y2=1;
+
+	//a la dcha
+	jugador2.g=0;
+	jugador2.x1=6;jugador2.y1=-1;
+	jugador2.x2=6;jugador2.y2=1;
+
+//p4
+
+	// este hilo recibe las teclas del client
+	pthread_create(&thid1,NULL,hilo_comandos,this);
+
+}
